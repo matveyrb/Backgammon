@@ -1,12 +1,20 @@
 package sample.model;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public interface BackGammon {
     Slot getSlot(int num);
-    boolean step(boolean isWhite, int initialPosition, int endPosition);
     boolean canThrowAway(boolean isWhite);
     Color isWinGame();
-    List<Integer> rollDice();
+    void rollDice();
+    Integer getDiceOne();
+    Integer getDiceTwo();
+    TurnColor getCurrentTurnColor();
+    boolean isWhite();
+    boolean move(Integer triangleNumberFirst, Integer triangleNumberLast);
+    boolean turnIsOver();
+    void nextPlayer();
+
+    boolean haveMove();
+    boolean canMove();
+    boolean emptyCell(Integer num);
 }

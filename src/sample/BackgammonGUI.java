@@ -10,22 +10,15 @@ import javafx.scene.image.ImageView;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 public class BackgammonGUI {
-    private HashMap<Integer, Image> picturesBlack;
-    private HashMap<Integer, Image> picturesWhite;
-    private HashMap<Integer, Image> dices;
+    private Map<Integer, Image> picturesBlack;
+    private Map<Integer, Image> picturesWhite;
+    private Map<Integer, Image> dices;
     private BackGammon logic;
     private Integer triangleNumberFirst;
     private Integer triangleNumberLast;
-    private List<Integer> step;
-    private int count = 0;
-    private boolean isWhite = true;
-    private int tempStep = 0;
-    private String turn = "White turn";
-    private boolean isEquals;
-    private boolean isTurnFromHead = false;
     private ImageView[] arrayImageView;
 
     @FXML
@@ -114,13 +107,11 @@ public class BackgammonGUI {
 
     @FXML
     public void rollDice() {
-        step = logic.rollDice();
-        diceValue.setText("Your dices are: \n" + step.get(0) + ", " + step.get(1) + "\n" + turn);
-        diceOne.setImage(dices.get(step.get(0)));
-        diceTwo.setImage(dices.get(step.get(1)));
+        logic.rollDice();
+        diceValue.setText("Your dices are: \n" + logic.getDiceOne() + ", " + logic.getDiceTwo() + "\n" + "Turn " + logic.getCurrentTurnColor().name());
+        diceOne.setImage(dices.get(logic.getDiceOne()));
+        diceTwo.setImage(dices.get(logic.getDiceTwo()));
         diceRoller.setDisable(true);
-        tempStep = step.size();
-        isEquals = step.get(0).equals(step.get(1)) && (step.get(0).equals(3) || step.get(0).equals(4) || step.get(0).equals(6));
     }
 
     public BackgammonGUI() throws FileNotFoundException {
@@ -168,60 +159,21 @@ public class BackgammonGUI {
         }
 
     }
-
     private void setValue(int num) {
-        if (count < tempStep && canMove()) {
-            boolean isOk = false;
-            if (triangleNumberFirst == null) {
+        if (logic.haveMove() && logic.canMove()) {
+            if (triangleNumberFirst == null && !logic.emptyCell(num)) {
                 triangleNumberFirst = num;
-                //подсвечивать ход
             } else {
                 triangleNumberLast = num;
-                for (int i = 0; i < step.size(); i++) {
-                    if (triangleNumberLast == 1000 && logic.canThrowAway(isWhite)) {
-                        if (24 - triangleNumberFirst <= step.get(i) && isWhite || !isWhite && triangleNumberFirst > 5 && triangleNumberFirst < 12) {
-                            isOk = true;
-                            step.remove(i);
-                            break;
-                        }
-                    }
-                    if (triangleNumberLast - triangleNumberFirst == step.get(i) || !isWhite &&
-                            (24 - triangleNumberFirst + triangleNumberLast == step.get(i))) {
-                        isOk = true;
-                        if (isTurnFromHead && (triangleNumberFirst == 0 && isWhite || triangleNumberFirst == 12 && !isWhite) && !isEquals) {
-                            isOk = false;
-                            break;
-                        }
-                        if (logic.getSlot(triangleNumberLast).getColor() == logic.getSlot(triangleNumberFirst).getColor() ||
-                                logic.getSlot(triangleNumberLast).getColor() == Color.NULL) {
-                            step.remove(i);
-                            break;
-                        } else isOk = false;
-                    }
-                }
-
-                if (isOk && logic.step(isWhite, triangleNumberFirst, triangleNumberLast)) {
-                    count++;
-                    if (triangleNumberFirst == 0 && isWhite || triangleNumberFirst == 12 && !isWhite)
-                        isTurnFromHead = true;
-                }
+                logic.move(triangleNumberFirst, triangleNumberLast);
 
                 triangleNumberLast = null;
                 triangleNumberFirst = null;
-
-                if (count == tempStep) {
-                    isTurnFromHead = false;
-                    count = 0;
-                    isWhite = !isWhite;
-                    if (isWhite) {
-                        turn = "White turn";
-                    } else {
-                        turn = "Black turn";
-                    }
+                if (logic.turnIsOver()) {
                     switch (logic.isWinGame()) {
                         case NULL:
                             diceRoller.setDisable(false);
-                            step.clear();
+                            logic.nextPlayer();
                             break;
                         case BLACK:
                             diceRoller.setText("Black wins");
@@ -233,38 +185,11 @@ public class BackgammonGUI {
                 }
             }
         }
-        draw();
-    }
-
-    private boolean canMove() {
-        for (int element : step) {
-            for (int i = 0; i < 24 - element; i++) {
-                if (isWhite) {
-                    if (i > 17 && i + element > 23) return true; // out
-                    if (!logic.getSlot(i + element).isBlack()) {
-                        return true;
-                    }
-                } else {
-                    if (i + element <= 23 && i > 11) { // lower row
-                        if (!logic.getSlot(i + element).isWhite()) {
-                            return true;
-                        }
-                    }
-                    if (i < 11 - element) { // upper row
-                        if (!logic.getSlot(i + element).isWhite()) {
-                            return true;
-                        }
-                    }
-                    if (i > 17 && 24 - i + element < 6) { // from lower to upper row (border)
-                        if (!logic.getSlot(24 - i + element).isWhite()) {
-                            return true;
-                        }
-                    }
-                    if (i > 5 && i + element > 11) return true; // out
-                }
-            }
+        else
+        {
+            logic.nextPlayer();
         }
-        return false;
+        draw();
     }
 
     @FXML
